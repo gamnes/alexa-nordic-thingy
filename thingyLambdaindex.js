@@ -21,7 +21,7 @@ config.IOT_SENSOR_THING_NAME =           process.env.THING_NAME;
 
 var SpeechOutputStrings = {
     WELCOME:        'Welcome.',
-    HELP_MESSAGE:   'You can ask me for different sensor readings, such as temperature and color, or, you can say exit... What can i help you with?',
+    HELP_MESSAGE:   'You can ask me for different sensor readings, such as temperature and color, or you can say exit... What can i help you with?',
     STOP_MESSAGE:   'Goodbye!',
 }
 
@@ -35,7 +35,9 @@ function logandprompt(logtxt) {
 const handlers = {
     'LaunchRequest': function () {
         speechQueue.length = 0;
-        this.emit(SpeechOutputStrings.WELCOME);
+        logandprompt(SpeechOutputStrings.WELCOME);
+        logandprompt(SpeechOutputStrings.HELP_MESSAGE);
+        this.emit('Speak');
     },
     
     'WhatsMyMetricIntent': function () {
