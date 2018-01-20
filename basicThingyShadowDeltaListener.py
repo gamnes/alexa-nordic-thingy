@@ -39,10 +39,26 @@ def customShadowCallback_Delta(payload, responseStatus, token):
     # in both Py2.x and Py3.x
     print(responseStatus)
     payloadDict = json.loads(payload)
+    print(payloadDict)
     print("++++++++DELTA++++++++++")
-    print("property: " + str(payloadDict["state"]["property"]))
+    print("temperature: " + str(payloadDict["state"]["temperature"]))
     print("version: " + str(payloadDict["version"]))
     print("+++++++++++++++++++++++\n\n")
+
+# Custom Shadow callback
+def customShadowCallback_Update(payload, responseStatus, token):
+    # payload is a JSON string ready to be parsed using json.loads(...)
+    # in both Py2.x and Py3.x
+    if responseStatus == "timeout":
+        print("Update request " + token + " time out!")
+    if responseStatus == "accepted":
+        payloadDict = json.loads(payload)
+        print("~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Update request with token: " + token + " accepted!")
+        print("temperature: " + str(payloadDict["state"]["reported"]["temperature"]))
+        print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+    if responseStatus == "rejected":
+        print("Update request " + token + " rejected!")
 
 
 # Read in command-line parameters
@@ -51,8 +67,6 @@ parser.add_argument("-e", "--endpoint", action="store", required=True, dest="hos
 parser.add_argument("-r", "--rootCA", action="store", required=True, dest="rootCAPath", help="Root CA file path")
 parser.add_argument("-c", "--cert", action="store", dest="certificatePath", help="Certificate file path")
 parser.add_argument("-k", "--key", action="store", dest="privateKeyPath", help="Private key file path")
-parser.add_argument("-w", "--websocket", action="store_true", dest="useWebsocket", default=False,
-                    help="Use MQTT over WebSocket")
 parser.add_argument("-n", "--thingName", action="store", dest="thingName", default="Bot", help="Targeted thing name")
 parser.add_argument("-id", "--clientId", action="store", dest="clientId", default="basicShadowDeltaListener",
                     help="Targeted client id")
@@ -62,15 +76,10 @@ host = args.host
 rootCAPath = args.rootCAPath
 certificatePath = args.certificatePath
 privateKeyPath = args.privateKeyPath
-useWebsocket = args.useWebsocket
 thingName = args.thingName
 clientId = args.clientId
 
-if args.useWebsocket and args.certificatePath and args.privateKeyPath:
-    parser.error("X.509 cert authentication and WebSocket are mutual exclusive. Please pick one.")
-    exit(2)
-
-if not args.useWebsocket and (not args.certificatePath or not args.privateKeyPath):
+if (not args.certificatePath or not args.privateKeyPath):
     parser.error("Missing credentials for authentication.")
     exit(2)
 
@@ -84,14 +93,9 @@ logger.addHandler(streamHandler)
 
 # Init AWSIoTMQTTShadowClient
 myAWSIoTMQTTShadowClient = None
-if useWebsocket:
-    myAWSIoTMQTTShadowClient = AWSIoTMQTTShadowClient(clientId, useWebsocket=True)
-    myAWSIoTMQTTShadowClient.configureEndpoint(host, 443)
-    myAWSIoTMQTTShadowClient.configureCredentials(rootCAPath)
-else:
-    myAWSIoTMQTTShadowClient = AWSIoTMQTTShadowClient(clientId)
-    myAWSIoTMQTTShadowClient.configureEndpoint(host, 8883)
-    myAWSIoTMQTTShadowClient.configureCredentials(rootCAPath, privateKeyPath, certificatePath)
+myAWSIoTMQTTShadowClient = AWSIoTMQTTShadowClient(clientId)
+myAWSIoTMQTTShadowClient.configureEndpoint(host, 8883)
+myAWSIoTMQTTShadowClient.configureCredentials(rootCAPath, privateKeyPath, certificatePath)
 
 # AWSIoTMQTTShadowClient configuration
 myAWSIoTMQTTShadowClient.configureAutoReconnectBackoffTime(1, 32, 20)
@@ -108,5 +112,28 @@ deviceShadowHandler = myAWSIoTMQTTShadowClient.createShadowHandlerWithName(thing
 deviceShadowHandler.shadowRegisterDeltaCallback(customShadowCallback_Delta)
 
 # Loop forever
+updated = False
 while True:
     time.sleep(1)
+    if not updated:
+        updated = True
+        JSONPayload = '{"state":{"reported":{"temperature": "%d"}}}' % 15
+        deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
