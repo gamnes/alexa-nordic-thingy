@@ -83,6 +83,40 @@ const handlers = {
         });
     },
     
+    'SetIntent': function () {
+        logandprompt(SpeechOutputStrings.WELCOME);
+        
+        var requestedColor = this.event.request.intent.slots.Color.value;
+        
+        if (requestedColor == null) {
+            logandprompt('You did not provide any color for me to set the LED to.');
+            logandprompt(SpeechOutputStrings.HELP_MESSAGE);
+            
+            // We exit here since we did not receive any metrics
+            this.emit('Speak');
+        } else {
+            logandprompt('You have asked to change the LED color to ' + requestedColor + '.');
+        }
+        
+        var desiredState = {"ledcolor": requestedColor};
+        
+        // Debug prints
+        console.log('Calling update sensor shadow. ');
+        updateSensorShadow(desiredState, result => {
+            console.log('getSensorShadow returned. ');
+            
+            if (result == "ok") {
+                logandprompt('Thingy shadow updated successfully. ');
+            }
+            else {
+                logandprompt('Something went wrong. Thingy shadow did not update correctly. ');
+            }
+            
+            // We exit here and return our response
+            this.emit('Speak'); 
+        });
+    },
+    
     'Speak': function () {
         var msg = speechQueue.join(" ");
         speechQueue.length = 0;
@@ -104,6 +138,47 @@ const handlers = {
     'AMAZON.StopIntent': function () {
         this.emit(':tell', this.t('STOP_MESSAGE'));
     },
+};
+
+function updateSensorShadow(desiredState, callback) {
+    console.log('Inside updateSensorShadow function.');
+    
+    var AWS = require('aws-sdk');
+    AWS.config.region = config.IOT_SENSOR_BROKER_REGION;
+
+    // Prepare the parameters of the update call
+    var credentials = {
+        accessKeyId : process.env.ACCESS_KEY_ID,
+        secretAccessKey : process.env.SECRET_ACCESS_KEY
+    };
+    var iotData = new AWS.IotData({
+        endpoint: config.IOT_SENSOR_BROKER_ENDPOINT,
+        credentials : credentials
+    });
+    var paramsUpdate = {
+        thingName: config.IOT_SENSOR_THING_NAME,
+        payload : JSON.stringify(
+            { "state":
+                { "desired": 
+                    desiredState
+                }
+            }
+        )
+    };
+    
+    iotData.updateThingShadow(paramsUpdate, function(err, data) {
+        if (err) {
+            console.log(err);
+            
+            console.log('Call to updateThingShadow failed.');
+            callback("not ok");
+        }
+        else {
+            console.log('updateThingShadow completed successfully.');
+            
+            callback("ok");
+        }
+    });
 };
 
 function getSensorShadow(callback) {

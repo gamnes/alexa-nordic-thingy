@@ -10,6 +10,15 @@
       "intent": "WhatsMyMetricIntent"
     },
     {
+      "slots": [
+        {
+          "name": "Color",
+          "type": "LIST_OF_COLORS"
+        }
+      ],
+      "intent": "SetIntent"
+    },
+    {
       "intent": "AMAZON.HelpIntent"
     },
     {

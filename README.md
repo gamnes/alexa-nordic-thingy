@@ -328,6 +328,16 @@ color
 ```
 
 - Click 'Add' 
+- Create another Custom Slot Type called 'LIST_OF_COLORS' as shown here
+```
+Enter Type; 
+LIST_OF_COLORS
+
+Enter Values; 
+green
+red
+blue
+```
 
 You should now see a custom slot type called SENSOR_METRIC with the values 'temperature | color'. 
 
@@ -336,6 +346,10 @@ For 'Sample Utterances' we are going to add the different phrases that we think 
 WhatsMyMetricIntent {metric}
 WhatsMyMetricIntent {metric} please
 WhatsMyMetricIntent what's the {metric}
+SetIntent set LED color to {Color}
+AMAZON.StopIntent thank you
+AMAZON.StopIntent exit
+AMAZON.StopIntent quit
 ```
 Click 'Save' and then 'Next'.
 
@@ -456,7 +470,7 @@ This part will explain how to get the Raspberry Pi to access the Thingy sensor d
 ## Raspberry Pi Setup
 If you need help with the initial set up of the Raspberry Pi, there are several other sources that can be used for this. I recommend looking through the guide as mentioned here: https://devzone.nordicsemi.com/blogs/1162/nordic-thingy52-raspberry-pi-python-interface/ and here https://devzone.nordicsemi.com/blogs/1160/walkthrough-of-nordic-thingy52-nodejs-raspberry-pi/.
 
-Make sure both `sudoo pip install BluePy` and `sudo pip install AWSIoTPythonSDK` are installed. If you already have these installed, I would recommend getting the latest version using the `--upgrade` option when calling the pip command. The version of BluePy and AWSIoTPythonSDK during my testing was `pip show bluepy` -> version 1.1.4, and `pip show awsiotpythonsdk` -> version 1.3.0. If you have any problems, check and see if you are using a different version than I was as that might be the cause of the issues.
+Make sure both `sudo pip install BluePy` and `sudo pip install AWSIoTPythonSDK` are installed. If you already have these installed, I would recommend getting the latest version using the `--upgrade` option when calling the pip command. The version of BluePy and AWSIoTPythonSDK during my testing was `pip show bluepy` -> version 1.1.4, and `pip show awsiotpythonsdk` -> version 1.3.0. If you have any problems, check and see if you are using a different version than I was as that might be the cause of the issues.
 
 ## Thingy:52 Setup
 Make sure your Thingy:52 is update to the latest FW. During my tests, the FW verison on the Thingy was version `2.1.0`. You can find this version number by connecting via the iOS or Android app, and enter the configuration tab and look under FIRMWARE VERSION. If you do not have this version, please update it using the OTA FW update feature that is called Device Firmware Update in the menu on the app.
