@@ -188,10 +188,15 @@ print("# Configuring and enabling button press notification...")
 thingy.ui.enable()
 thingy.ui.set_btn_notification(True)
 
+print("# Configure and enable the sound service...")
+thingy.sound.enable()
+thingy.sound.configure(speaker_mode=0x03)  # 0x03 is sample mode, see FW doc on github
+thingy.sound.play_speaker_sample(0)
+
 print("# Setting color of LED to be initial RED...")
-thingy.ui.set_led_mode_constant(255, 0, 0)
+thingy.ui.set_led_mode_breathe(0x01, 30, 3000)
 print("# Update IoT Thing reported ledcolor to be the one we just set...")
-JSONPayload = '{"state":{"reported":{"ledcolor": "red"}}}'
+JSONPayload = '{"state":{"reported":{"ledcolor": "red"}, "desired":{"ledcolor": "red"}}}'
 deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
 
 # Loop forever
@@ -211,11 +216,14 @@ while True:
     if thingShadowData.ledcolor != thingy52Data.ledcolor:
         print("# Changing LEDcolor to match desired...")
         if thingShadowData.ledcolor == "red":
-            thingy.ui.set_led_mode_constant(255, 0, 0)
+            thingy.ui.set_led_mode_breathe(0x01, 30, 3000)  # 0x01 is red. See thingy FW doc on github for hex values of color
+            thingy.sound.play_speaker_sample(1)
         if thingShadowData.ledcolor == "green":
-            thingy.ui.set_led_mode_constant(0, 255, 0)
+            thingy.ui.set_led_mode_breathe(0x02, 30, 3000)  # 0x02 is green
+            thingy.sound.play_speaker_sample(2)
         if thingShadowData.ledcolor == "blue":
-            thingy.ui.set_led_mode_constant(0, 0, 255)
+            thingy.ui.set_led_mode_breathe(0x04, 30, 3000)  # 0x04 is blue
+            thingy.sound.play_speaker_sample(3)
         thingy52Data.ledcolor = thingShadowData.ledcolor
         JSONPayload = '{"state":{"reported":{"ledcolor": "%s"}}}' % thingy52Data.ledcolor
         deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
