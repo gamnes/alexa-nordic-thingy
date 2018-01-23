@@ -41,6 +41,7 @@ import binascii
 class Thingy52SensorData:
     def __init__(self):
         self.temperature = 0
+        self.ledcolor = "red"
 
 thingy52Data = Thingy52SensorData()
 thingShadowData = Thingy52SensorData()
@@ -54,12 +55,19 @@ def customShadowCallback_Delta(payload, responseStatus, token):
     payloadDict = json.loads(payload)
     print(payloadDict)
 
-    # When we receive Delta message from IoT Thing, we use this as a request later on
-    # TBD
-    print("++++++++DELTA++++++++++")
-    print("temperature: " + str(payloadDict["state"]["temperature"]))
-    print("version: " + str(payloadDict["version"]))
-    print("+++++++++++++++++++++++\n\n")
+    # When we receive Delta message from IoT Thing, we should check if the LED color of Thingy is desired
+    print("# ~~~~~~DELTA~~~~~~~~~~~~")
+    if "temperature" in payloadDict["state"]:
+        print("temperature: " + str(payloadDict["state"]["temperature"]))
+    if "ledcolor" in payloadDict["state"]:
+        requestedColor = str(payloadDict["state"]["ledcolor"])
+        print("ledcolor: " + requestedColor)
+
+        # Set the LED of the Thingy accordingly, will be update in main loop
+        thingShadowData.ledcolor = requestedColor.lower()
+    if "version" in payloadDict:
+        print("version: " + str(payloadDict["version"]))
+    print("# ~~~~~~DELTA~~~~~~~~~~~~\n\n")
 
 # Custom Shadow callback
 def customShadowCallback_Update(payload, responseStatus, token):
@@ -70,15 +78,16 @@ def customShadowCallback_Update(payload, responseStatus, token):
     if responseStatus == "accepted":
         payloadDict = json.loads(payload)
 
-        # Print out status message on reported temperature entry. If temperature does not exist, this will fail
+        # Print out status message on reported entry.
         print("# ~~~~~~~~~~~~~~~~~~~~~~~")
         print("# Update request with token: " + token + " accepted!")
-        print("# temperature: " + str(payloadDict["state"]["reported"]["temperature"]))
-        print("# ~~~~~~~~~~~~~~~~~~~~~~~\n\n")
-
-        # Update shadow struct with new reported data
         print("# Update local shadow variable to store new reported value")
-        thingShadowData.temperature = int(payloadDict["state"]["reported"]["temperature"])
+        if "temperature" in payloadDict["state"]["reported"]:
+            print("# temperature: " + str(payloadDict["state"]["reported"]["temperature"]))
+            thingShadowData.temperature = int(payloadDict["state"]["reported"]["temperature"])
+        if "ledcolor" in payloadDict["state"]["reported"]:
+            print("# ledcolor: " + str(payloadDict["state"]["reported"]["ledcolor"]))
+        print("# ~~~~~~~~~~~~~~~~~~~~~~~\n\n")
         
     if responseStatus == "rejected":
         print("Update request " + token + " rejected!")
@@ -90,6 +99,7 @@ parser.add_argument("-e", "--endpoint", action="store", required=True, dest="hos
 parser.add_argument("-r", "--rootCA", action="store", required=True, dest="rootCAPath", help="Root CA file path")
 parser.add_argument("-c", "--cert", action="store", dest="certificatePath", help="Certificate file path")
 parser.add_argument("-k", "--key", action="store", dest="privateKeyPath", help="Private key file path")
+parser.add_argument("-ds", "--deleteShadow", action="store_true", dest="deleteShadow", help="Delete IoT Thing Shadow startup.")
 parser.add_argument("-n", "--thingName", action="store", dest="thingName", default="Bot", help="Targeted thing name")
 parser.add_argument("-id", "--clientId", action="store", dest="clientId", default="basicShadowDeltaListener",
                     help="Targeted client id")
@@ -140,7 +150,9 @@ deviceShadowHandler = myAWSIoTMQTTShadowClient.createShadowHandlerWithName(thing
 # Listen on deltas
 deviceShadowHandler.shadowRegisterDeltaCallback(customShadowCallback_Delta)
 
-
+# Check if shadow should be deleted or not
+if args.deleteShadow:
+    deviceShadowHandler.shadowDelete(None, 5)
 
 # Create notification handlers and establish connection to Nordic Thingy:52
 def str_to_int(s):
@@ -176,13 +188,18 @@ print("# Configuring and enabling button press notification...")
 thingy.ui.enable()
 thingy.ui.set_btn_notification(True)
 
+print("# Setting color of LED to be initial RED...")
+thingy.ui.set_led_mode_constant(255, 0, 0)
+print("# Update IoT Thing reported ledcolor to be the one we just set...")
+JSONPayload = '{"state":{"reported":{"ledcolor": "red"}}}'
+deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
 
 # Loop forever
+print("# Waiting for BLE notification with timeout enabled, as well as Shadow notifications...")
 while True:
 
     # Sleep for xx.x seconds before checking if data has changed unless notification arrives
-    print("# Waiting for notification with timeout enabled...")
-    thingy.waitForNotifications(timeout=10.0)
+    thingy.waitForNotifications(timeout=2.0)
 
     if thingShadowData.temperature != thingy52Data.temperature:
         print("# Update IoT Thing reported temperature to be the collected one {} from current {}...".format(
@@ -190,6 +207,18 @@ while True:
         JSONPayload = '{"state":{"reported":{"temperature": "%d"}}}' % thingy52Data.temperature
         deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
         # Update shadow data in the callback when we know if it was accepted or not
+
+    if thingShadowData.ledcolor != thingy52Data.ledcolor:
+        print("# Changing LEDcolor to match desired...")
+        if thingShadowData.ledcolor == "red":
+            thingy.ui.set_led_mode_constant(255, 0, 0)
+        if thingShadowData.ledcolor == "green":
+            thingy.ui.set_led_mode_constant(0, 255, 0)
+        if thingShadowData.ledcolor == "blue":
+            thingy.ui.set_led_mode_constant(0, 0, 255)
+        thingy52Data.ledcolor = thingShadowData.ledcolor
+        JSONPayload = '{"state":{"reported":{"ledcolor": "%s"}}}' % thingy52Data.ledcolor
+        deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
     
 
 # Will never be called because of the while True loop
