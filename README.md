@@ -4,7 +4,9 @@ Using Amazon Alexa skill to interface Nordic Semiconductor Thingy:52 via a Raspb
 ## Summary
 The purpose of this demo is to show how you can use a [Amazon Alexa skill](https://developer.amazon.com/alexa) in order to access and control a [Nordic Thingy:52](https://www.nordicsemi.com/eng/Products/Nordic-Thingy-52).
 
-To accomplish this, I will be using a Raspberry Pi with embedded Bluetooth Low Energy to access data on the Thingy:52. This data is then accessible online from the [Amazon Web Service (AWS)](https://en.wikipedia.org/wiki/Amazon_Web_Services). An Alexa skill is then used to access this web service and thus the data is accessible via the Alexa voice service.
+To accomplish this, I will be using a Raspberry Pi with embedded Bluetooth Low Energy to access data on the Thingy:52. This data is then accessible online from the [Amazon Web Service (AWS)](https://en.wikipedia.org/wiki/Amazon_Web_Services). An Alexa skill is then used to access this web service and thus the data is accessible via the Alexa voice service. An overview of the demo system can be seen below.
+
+![System Overview](SystemOverview.png)
 
 ```html
 THIS REPOSITORY IS WORK IN PROGRESS. 
