@@ -21,7 +21,8 @@ import time
 import json
 import argparse
 
-from bluepy import btle, thingy52
+from bluepy import btle
+import thingy52  # With EXT PIN support, local file since Bluepy not yet updated
 import binascii
 
 
@@ -184,7 +185,7 @@ thingy.environment.enable()
 thingy.environment.configure(temp_int=5000) # 5000 means 5 seconds
 thingy.environment.set_temperature_notification(True)
 
-print("# Configuring and enabling button press notification...")
+print("# Configuring UI. Enabling button press notification...")
 thingy.ui.enable()
 thingy.ui.set_btn_notification(True)
 
@@ -224,6 +225,26 @@ while True:
         if thingShadowData.ledcolor == "blue":
             thingy.ui.set_led_mode_breathe(0x04, 30, 3000)  # 0x04 is blue
             thingy.sound.play_speaker_sample(3)
+        if thingShadowData.ledcolor == "christmas-on":
+            thingy.ui.set_led_mode_breathe(0x01, 30, 3000)  # Set LED to red
+            thingy.ui.set_ext_pin_state(255, 0, 0, 0)
+            time.sleep(0.4)
+            thingy.ui.set_ext_pin_state(255, 255, 0, 0)
+            time.sleep(0.4)
+            thingy.ui.set_ext_pin_state(255, 255, 255, 0)
+            time.sleep(0.4)
+            thingy.ui.set_ext_pin_state(255, 255, 255, 255)
+            time.sleep(0.4)
+        if thingShadowData.ledcolor == "christmas-off":
+            thingy.ui.set_led_mode_breathe(0x04, 30, 3000) # Set LED to Blue
+            thingy.ui.set_ext_pin_state(255, 255, 255, 0)
+            time.sleep(0.4)
+            thingy.ui.set_ext_pin_state(255, 255, 0, 0)
+            time.sleep(0.4)
+            thingy.ui.set_ext_pin_state(255, 0, 0, 0)
+            time.sleep(0.4)
+            thingy.ui.set_ext_pin_state(0, 0, 0, 0)
+            time.sleep(0.4)
         thingy52Data.ledcolor = thingShadowData.ledcolor
         JSONPayload = '{"state":{"reported":{"ledcolor": "%s"}}}' % thingy52Data.ledcolor
         deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
